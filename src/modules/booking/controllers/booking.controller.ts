@@ -79,12 +79,12 @@ export class BookingController {
   async getOwnerBookings(
     @User() user: ReadUserDTO,
     @Query(new ValidationPipe({ transform: true }))
-    page?: number,
+    page?: any,
   ) {
     const res = await this.bookingService.getOwnerBooking(
       user.id,
       'booking',
-      page,
+      page.page ? page.page : page ? page : 1,
     );
     if (!res) {
       throw new NotFoundException('booking_not_found');
