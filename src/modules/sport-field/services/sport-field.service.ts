@@ -114,7 +114,6 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
   }
 
   async getSportFieldsWithFilter(filter: any) {
-    console.log(filter, 'filter');
     const query = await this.sportFieldRepository
       .createQueryBuilder('sportField')
       .innerJoinAndSelect('sportField.location', 'location');
@@ -125,7 +124,6 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
       filter.location !== ''
     ) {
       const { long, lat } = JSON.parse(filter.location);
-      console.log('long', long, 'lat', lat);
       query.addSelect(
         `earth_distance(
         ll_to_earth(location.latitude, location.longitude),
@@ -365,7 +363,6 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
     sportFieldTypeId?: string,
   ): Promise<any> {
     const sportFieldType = this.getSportFieldQuery(sportFieldTypeId);
-    console.log(sportFieldType);
     const qb = this.sportFieldRepository
       .createQueryBuilder('sportField')
       .leftJoin('sportField.fields', 'field', 'field.deletedAt IS NULL')

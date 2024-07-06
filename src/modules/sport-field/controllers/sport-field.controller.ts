@@ -181,7 +181,6 @@ export class SportFieldController {
     @Query('endTime') endTime?: Date,
     @Query('sportFieldTypeId') sportFieldTypeId?: string,
   ): Promise<BaseResponse<ReadSportFieldDto>> {
-    console.log(startTime, endTime, pagination, sportFieldTypeId);
     const sportFields = await this.sportFieldService.getSportFieldByTime(
       startTime,
       endTime,
