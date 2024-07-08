@@ -56,6 +56,11 @@ export class BookingController {
     return this.bookingService.updateBooking(id, data, user);
   }
 
+  @Patch('update-qr-booking/:id')
+  updateQRBookings(@Param('id') id: string, @User() user: ReadUserDTO) {
+    console.log(user);
+    return this.bookingService.updateQRBooking(id, user);
+  }
   @Post()
   create(
     @User() user: ReadUserDTO,

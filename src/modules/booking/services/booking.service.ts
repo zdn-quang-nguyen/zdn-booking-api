@@ -518,6 +518,38 @@ export class BookingService extends BaseService<BookingEntity> {
       message: 'Updated successfully',
     };
   }
+  async updateQRBooking(id: string, user: ReadUserDTO) {
+    const booking = await this.bookingRepository.findOne({
+      where: {
+        id,
+      },
+      relations: ['field', 'field.sportField'],
+    });
+    if (!booking) {
+      throw new NotFoundException('Booking not exists');
+    }
+    if (booking.field.sportField.ownerId !== user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to access this booking',
+      );
+    }
+    if (booking.status === BookingStatus.BOOKING) {
+      throw new BadRequestException('Booking is not accepted yet');
+    }
+    if (DateTimeHelper.isInPast(booking.endTime)) {
+      throw new BadRequestException('Booking is in the past');
+    }
+    if (booking.status !== BookingStatus.ACCEPTED) {
+      throw new BadRequestException('Booking is disabled or rejected');
+    }
+    booking.status = BookingStatus.DISABLED;
+    await this.bookingRepository.save(booking);
+    return {
+      statusCode: 200,
+      type: 'Success',
+      message: 'Updated successfully',
+    };
+  }
 
   async getBookingsCalendarWeek(
     id: string,
