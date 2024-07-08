@@ -79,12 +79,12 @@ export class BookingController {
   async getOwnerBookings(
     @User() user: ReadUserDTO,
     @Query(new ValidationPipe({ transform: true }))
-    page?: number,
+    page?: any,
   ) {
     const res = await this.bookingService.getOwnerBooking(
       user.id,
       'booking',
-      page,
+      page.page ? page.page : page ? page : 1,
     );
     if (!res) {
       throw new NotFoundException('booking_not_found');
@@ -100,6 +100,22 @@ export class BookingController {
     filter?: any,
   ) {
     const res = await this.bookingService.getTransaction(user.id, filter);
+    if (!res) {
+      throw new NotFoundException('booking_not_found');
+    }
+    return res;
+  }
+
+  @Get('owner-schedule')
+  async getOwnerSchedule(
+    @User() user: ReadUserDTO,
+    @Query(new ValidationPipe({ transform: true }))
+    readBookingDto: ReadBookingDto,
+  ) {
+    const res = await this.bookingService.getOwnerSchedule(
+      user,
+      readBookingDto,
+    );
     if (!res) {
       throw new NotFoundException('booking_not_found');
     }

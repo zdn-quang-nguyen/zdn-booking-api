@@ -241,6 +241,26 @@ export class BookingService extends BaseService<BookingEntity> {
     return query.getMany();
   }
 
+  async getOwnerSchedule(user: ReadUserDTO, filter?: any) {
+    const query = this.bookingRepository.createQueryBuilder('booking');
+
+    if (filter.fieldId) {
+      query.where('booking.fieldId = :fieldId', { fieldId: filter.fieldId });
+    }
+
+    query
+      .innerJoinAndSelect('booking.field', 'field')
+      .innerJoinAndSelect('field.sportField', 'sportField')
+      .innerJoinAndSelect('sportField.sportFieldType', 'sportFieldType')
+      .orderBy('booking.startTime', 'DESC');
+
+    query.where('sportField.ownerId = :userId', { userId: user.id });
+    if (filter.status) {
+      this.applyStatusFilter(query, filter.status);
+    }
+    return query.getMany();
+  }
+
   async getTransaction(userId: string, filter?: any) {
     const query = this.bookingRepository
       .createQueryBuilder('booking')
@@ -250,7 +270,7 @@ export class BookingService extends BaseService<BookingEntity> {
       .orderBy('booking.startTime', 'DESC');
 
     if (userId) {
-      query.where('sportField.ownerId != :userId', { userId });
+      query.where('sportField.ownerId = :userId', { userId });
     }
 
     if (
@@ -264,7 +284,7 @@ export class BookingService extends BaseService<BookingEntity> {
 
     if (filter) {
       if (filter.status === 'all') {
-        query.andWhere('booking.status = :status', {
+        query.andWhere('booking.status != :status', {
           status: BookingStatus.BOOKING,
         });
       } else {

@@ -9,6 +9,7 @@ import {
   Delete,
   BadRequestException,
   Query,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { API_BEARER_AUTH } from 'src/constants/constants';
@@ -136,28 +137,41 @@ export class SportFieldController {
   }
 
   @Get()
+  // async getSportFields(
+  //   @PaginationParams() pagination: Pagination,
+  //   @FilteringParams([
+  //     'name',
+  //     'startTime',
+  //     'endTime',
+  //     'phone',
+  //     'rule',
+  //     'ownerId',
+  //   ])
+  //   filtering?: Filtering,
+  //   @Query('sportFieldTypeId') sportFieldTypeId?: string,
+  //   @Query('startTime') startTime?: string,
+  //   @Query('endTime') endTime?: string,
+  //   @Query('location') location?: string,
+  // ): Promise<BaseResponse<ReadSportFieldDto>> {
+  //   console.log(location, 'location');
+  //   return this.sportFieldService.getSportFields(
+  //     pagination,
+  //     filtering,
+  //     sportFieldTypeId,
+  //     startTime,
+  //     endTime,
+  //     location,
+  //   );
+  // }
   async getSportFields(
-    @PaginationParams() pagination: Pagination,
-    @FilteringParams([
-      'name',
-      'startTime',
-      'endTime',
-      'phone',
-      'rule',
-      'ownerId',
-    ])
-    filtering?: Filtering,
-    @Query('sportFieldTypeId') sportFieldTypeId?: string,
-    @Query('startTime') startTime?: string,
-    @Query('endTime') endTime?: string,
-  ): Promise<BaseResponse<ReadSportFieldDto>> {
-    return this.sportFieldService.getSportFields(
-      pagination,
-      filtering,
-      sportFieldTypeId,
-      startTime,
-      endTime,
-    );
+    @Query(new ValidationPipe({ transform: true }))
+    filter?: any,
+  ) {
+    const res = await this.sportFieldService.getSportFieldsWithFilter(filter);
+    if (!res) {
+      throw new BadRequestException('sport_field_not_found');
+    }
+    return res;
   }
 
   @Get('/by-times')
@@ -167,7 +181,6 @@ export class SportFieldController {
     @Query('endTime') endTime?: Date,
     @Query('sportFieldTypeId') sportFieldTypeId?: string,
   ): Promise<BaseResponse<ReadSportFieldDto>> {
-    console.log(startTime, endTime, pagination, sportFieldTypeId);
     const sportFields = await this.sportFieldService.getSportFieldByTime(
       startTime,
       endTime,

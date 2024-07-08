@@ -6,6 +6,7 @@ import { InjectMapper } from '@automapper/nestjs';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  Brackets,
   IsNull,
   LessThanOrEqual,
   MoreThanOrEqual,
@@ -74,6 +75,7 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
     sportFieldTypeId?: string,
     startTime?: string,
     endTime?: string,
+    location?: string,
   ) {
     const where = getWhere(filter);
     const sportFieldType = this.getSportFieldQuery(sportFieldTypeId);
@@ -89,6 +91,7 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
           location: true,
           sportFieldType: true,
         },
+
         take: limit,
         skip: offset,
       });
@@ -107,6 +110,173 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
       200,
       new Date().toString(),
       totalPage,
+    );
+  }
+
+  async getSportFieldsWithFilter(filter: any) {
+    const query = await this.sportFieldRepository
+      .createQueryBuilder('sportField')
+      .innerJoinAndSelect('sportField.location', 'location');
+
+    if (
+      filter.location !== undefined &&
+      filter.location !== null &&
+      filter.location !== ''
+    ) {
+      const { long, lat } = JSON.parse(filter.location);
+      query.addSelect(
+        `earth_distance(
+        ll_to_earth(location.latitude, location.longitude),
+        ll_to_earth(:lat, :long)
+      ) `,
+        'distance_meters',
+      );
+      query.setParameters({ lat, long });
+    }
+
+    if (filter.name) {
+      query.andWhere('sportField.name ILIKE :name', {
+        name: `%${filter.name}%`,
+      });
+    }
+
+    if (filter.startTime && filter.endTime) {
+      query.andWhere('sportField.startTime >= :startTime', {
+        startTime: filter.startTime,
+      });
+      query.andWhere('sportField.startTime <= :endTime', {
+        endTime: filter.endTime,
+      });
+      query.andWhere('sportField.endTime <= :endTime', {
+        endTime: filter.endTime,
+      });
+    }
+
+    if (filter.type && filter.type !== '' && filter.type !== 'all') {
+      query.andWhere('sportField.sportFieldTypeId = :type', {
+        type: filter.type,
+      });
+    }
+
+    if (
+      filter.query !== undefined &&
+      filter.query !== null &&
+      filter.query !== ''
+    ) {
+      const userQuery = JSON.parse(filter.query);
+
+      if (userQuery.name) {
+        query.andWhere('sportField.name ILIKE :name', {
+          name: `%${userQuery.name}%`,
+        });
+      }
+
+      // if (userQuery.date !== undefined && userQuery.date !== '') {
+      //   query.andWhere(
+      //     "DATE(sportField.startTime AT TIME ZONE 'UTC+7') = :day",
+      //     {
+      //       day: userQuery.date,
+      //     },
+      //   );
+      // }
+      const subQuery = this.sportFieldRepository
+        .createQueryBuilder('sportFieldSub')
+        .leftJoin('sportFieldSub.fields', 'field')
+        .leftJoin('field.bookings', 'booking')
+        .where('sportFieldSub.id = sportField.id');
+
+      if (userQuery.startTime && userQuery.endTime && userQuery.date) {
+        const { date, startTime, endTime } = userQuery;
+        subQuery
+          .andWhere(
+            new Brackets((qb) => {
+              qb.where(
+                "DATE(booking.start_time AT TIME ZONE 'UTC+7') = :date",
+                {
+                  date,
+                },
+              )
+                .andWhere('booking.status IN (:...status)', {
+                  status: [BookingStatus.ACCEPTED, BookingStatus.DISABLED],
+                })
+                .andWhere(
+                  "TO_CHAR(booking.start_time, 'HH24:MI') >= :startTime",
+                  {
+                    startTime,
+                  },
+                )
+                .andWhere(
+                  "TO_CHAR(booking.start_time, 'HH24:MI') <= :endTime",
+                  {
+                    endTime,
+                  },
+                )
+                .andWhere("TO_CHAR(booking.end_time, 'HH24:MI') <= :endTime", {
+                  endTime: userQuery.endTime,
+                });
+            }),
+          )
+          .select('COUNT(field.id)');
+        const subQueryString = subQuery.getQuery();
+        query
+          .andWhere(`(${subQueryString}) < sportField.quantity`)
+          .setParameters({ date, startTime, endTime });
+      }
+
+      if (userQuery.distanceOrder && userQuery.distanceOrder !== '') {
+        if (
+          filter.location !== undefined &&
+          filter.location !== null &&
+          filter.location !== ''
+        ) {
+          query.orderBy('distance_meters', userQuery.distanceOrder);
+        }
+      }
+    }
+
+    const total = await query.getCount();
+
+    if (filter.page !== undefined && filter.limit !== undefined) {
+      query.take(filter.limit);
+      query.skip(filter.page * filter.limit);
+    }
+
+    query
+      .innerJoinAndSelect('sportField.sportFieldImages', 'sportFieldImages')
+      .innerJoinAndSelect('sportField.sportFieldType', 'sportFieldType');
+
+    if (
+      filter.query !== undefined &&
+      filter.query !== null &&
+      filter.query !== ''
+    ) {
+      const userQuery = JSON.parse(filter.query);
+      if (userQuery.priceOrder && userQuery.priceOrder !== '') {
+        query.orderBy('sportField.price', userQuery.priceOrder);
+      }
+    }
+
+    const rawAndEntities = await query.getRawAndEntities();
+    const { entities, raw } = rawAndEntities;
+
+    const sportFields = entities.map((entity, index) => {
+      const rawItem = raw.find((item) => item.sportField_id === entity.id);
+      if (rawItem) {
+        return {
+          ...entity,
+          distanceMeters: rawItem.distance_meters,
+        };
+      } else {
+        return entity;
+      }
+    });
+    console.log(sportFields, 'sportFields');
+    return new BaseResponse(
+      sportFields,
+      'sport_field_found',
+      200,
+      new Date().toString(),
+      Math.ceil(total / filter.limit),
     );
   }
 
@@ -193,7 +363,6 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
     sportFieldTypeId?: string,
   ): Promise<any> {
     const sportFieldType = this.getSportFieldQuery(sportFieldTypeId);
-     console.log(sportFieldType);
     const qb = this.sportFieldRepository
       .createQueryBuilder('sportField')
       .leftJoin('sportField.fields', 'field', 'field.deletedAt IS NULL')
