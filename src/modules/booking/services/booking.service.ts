@@ -499,59 +499,71 @@ export class BookingService extends BaseService<BookingEntity> {
     };
   }
 
-  async getBookingsCalendar(
+  async getBookingsCalendarWeek(
     id: string,
-    readBookingDateDto: ReadBookingDateDTO,
-  ): Promise<ReadingBookingCalendar[]> {
-    let currentTime = new Date(readBookingDateDto.startTime);
-    const endTime = new Date(readBookingDateDto.endTime);
-    const timeSlots = [];
-    while (currentTime < endTime) {
-      timeSlots.push(new Date(currentTime));
-      currentTime = new Date(currentTime.getTime() + 30 * 60000); // Thêm 30 phút
+    startOfWeek: Date,
+    endOfWeek: Date,
+    dailyStartTime: string,
+    dailyEndTime: string,
+  ): Promise<ReadingBookingCalendar[][]> {
+    const weeklyData: ReadingBookingCalendar[][] = [];
+    const currentDate = new Date(startOfWeek);
+    console.log(currentDate);
+    while (currentDate <= new Date(endOfWeek)) {
+      console.log(currentDate.getHours());
+      const startTime = new Date(currentDate);
+      const time = parseInt(dailyStartTime.split(':')[0], 10);
+      startTime.setHours(time);
+      console.log(startTime);
+
+      startTime.setMinutes(parseInt(dailyStartTime.split(':')[1]));
+      const endTime = new Date(currentDate);
+      endTime.setHours(parseInt(dailyEndTime.split(':')[0], 10));
+      endTime.setMinutes(parseInt(dailyEndTime.split(':')[1], 10));
+
+      const timeSlots = [];
+      let currentTime = new Date(startTime);
+      const endTimeOfDay = new Date(endTime);
+      while (currentTime < endTimeOfDay) {
+        timeSlots.push(new Date(currentTime));
+        currentTime = new Date(currentTime.getTime() + 30 * 60000);
+      }
+
+      const fields = await this.fieldRepository.find({
+        where: { sportField: { id: id } },
+      });
+
+      const fieldIds = fields.map((field) => field.id);
+
+      const results = await Promise.all(
+        timeSlots.map(async (slot) => {
+          const bookings = await this.bookingRepository.find({
+            where: {
+              field: { id: In(fieldIds) },
+              status: BookingStatus.ACCEPTED,
+              startTime: LessThanOrEqual(slot),
+              endTime: MoreThanOrEqual(new Date(slot.getTime() + 30 * 60000)),
+            },
+          });
+
+          const isEmpty = bookings.length === 0;
+
+          return {
+            startTime: slot,
+            endTime: new Date(slot.getTime() + 30 * 60000),
+            isEmpty: isEmpty,
+          };
+        }),
+      );
+
+      console.log(currentDate);
+
+      weeklyData.push(results);
+
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    const fields = await this.fieldRepository.find({
-      where: { sportField: { id: id } },
-    });
-
-    const fieldIds = fields.map((field) => field.id);
-
-    const results = await Promise.all(
-      timeSlots.map(async (slot) => {
-        const bookings = await this.bookingRepository.find({
-          where: {
-            field: { id: In(fieldIds) },
-            status: BookingStatus.ACCEPTED,
-            startTime: LessThanOrEqual(slot),
-            endTime: MoreThanOrEqual(new Date(slot.getTime() + 30 * 60000)),
-          },
-        });
-
-        if (bookings.length === 0) {
-          return {
-            startTime: slot,
-            endTime: new Date(slot.getTime() + 30 * 60000),
-            isEmpty: true,
-          };
-        } else if (bookings.length === fields.length) {
-          console.log(bookings.length, fields.length);
-          return {
-            startTime: slot,
-            endTime: new Date(slot.getTime() + 30 * 60000),
-            isEmpty: false,
-          };
-        } else {
-          return {
-            startTime: slot,
-            endTime: new Date(slot.getTime() + 30 * 60000),
-            isEmpty: false,
-          };
-        }
-      }),
-    );
-
-    return results;
+    return weeklyData;
   }
   async getBookingById(id: string) {
     const booking = await this.bookingRepository.findOne({
