@@ -94,7 +94,7 @@ export class SportFieldController {
       for (let i = 0; i < createSportFieldDto.quantity; i++) {
         this.eventEmitter.emit(
           'create.field',
-          new CreateFieldEvent(`${res.name} - ${i + 1}`, res.id, res.createdBy),
+          new CreateFieldEvent(`Field - ${i + 1}`, res.id, res.createdBy),
         );
       }
 

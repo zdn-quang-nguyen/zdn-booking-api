@@ -221,6 +221,36 @@ export class BookingService extends BaseService<BookingEntity> {
       query.andWhere('booking.status IN (:...status)', { status });
     }
   }
+  async getBookingsByUser(userId: string, filter: any) {
+    const query = this.bookingRepository.createQueryBuilder('booking');
+
+    query
+      .where('booking.createdBy = :userId', { userId })
+      .addOrderBy('booking.updatedAt', 'DESC');
+
+    query
+      .innerJoinAndSelect('booking.field', 'field')
+      .innerJoinAndSelect('field.sportField', 'sportField');
+
+    if (filter.status !== 'all') {
+      query.andWhere('booking.status = :status', { status: filter.status });
+    }
+
+    const total = await query.getCount();
+
+    if (filter.page > 0) {
+      query.skip((filter.page - 1) * 15);
+      query.take(15);
+    }
+
+    const data = await query.getMany();
+    console.log({ data, total });
+
+    return {
+      data,
+      total,
+    };
+  }
 
   async getBookingsByFieldId(
     user: ReadUserDTO,

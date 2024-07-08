@@ -122,6 +122,19 @@ export class BookingController {
     return res;
   }
 
+  @Get('by-user')
+  async getBookingsByUser(
+    @User() user: ReadUserDTO,
+    @Query(new ValidationPipe({ transform: true }))
+    filter: any,
+  ) {
+    const res = await this.bookingService.getBookingsByUser(user.id, filter);
+    if (!res) {
+      throw new NotFoundException('booking_not_found');
+    }
+    return res;
+  }
+
   @Get('user')
   getUserBookings(
     @User() user: ReadUserDTO,
