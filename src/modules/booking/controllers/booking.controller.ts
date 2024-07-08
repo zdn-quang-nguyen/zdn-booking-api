@@ -22,7 +22,7 @@ import { BookingService } from '../services/booking.service';
 import { ReadBookingDto } from '../dto/read-booking.dto';
 import { ReadOwnerBookingDto } from '../dto/read-owner-booking.dto';
 import { CreateOwnerBookingDto } from '../dto/create-owner-booking.dto';
-import { ReadBookingDateDTO } from '../dto/read-booking-date.dto';
+
 import { BookingEntity } from '../entities/booking.entity';
 
 @Controller('booking')
@@ -56,6 +56,11 @@ export class BookingController {
     return this.bookingService.updateBooking(id, data, user);
   }
 
+  @Patch('update-qr-booking/:id')
+  updateQRBookings(@Param('id') id: string, @User() user: ReadUserDTO) {
+    console.log(user);
+    return this.bookingService.updateQRBooking(id, user);
+  }
   @Post()
   create(
     @User() user: ReadUserDTO,
@@ -166,9 +171,18 @@ export class BookingController {
   @Get('/bookings-calendar-sport-field/:id')
   getBookingCalendar(
     @Param('id') id: string,
-    @Body() readBookingDateDto: ReadBookingDateDTO,
+    @Query('startTime') startOfWeek: Date,
+    @Query('endTime') endOfWeek: Date,
+    @Query('startTimeDay') startTime: string,
+    @Query('endTimeDay') endTime: string,
   ) {
-    return this.bookingService.getBookingsCalendar(id, readBookingDateDto);
+    return this.bookingService.getBookingsCalendarWeek(
+      id,
+      startOfWeek,
+      endOfWeek,
+      startTime,
+      endTime,
+    );
   }
 
   @Delete(':id')
