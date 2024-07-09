@@ -20,6 +20,7 @@ import {
 } from 'src/decorators/pagination.decorator';
 import { Public } from 'nest-keycloak-connect';
 import { MarkAsReadDto } from './dto/mark-as-read.dto';
+import { NotificationFilterDto } from './dto/notification-filter.dto';
 
 @Controller('notification')
 export class NotificationController {
@@ -48,10 +49,12 @@ export class NotificationController {
   findAll(
     @PaginationParams() paginationParams: Pagination,
     @User() user: ReadUserDTO,
+    @Query() notificationFilter: NotificationFilterDto,
   ) {
     return this.notificationService.findAllUserNotifications(
       user,
       paginationParams,
+      notificationFilter,
     );
   }
 

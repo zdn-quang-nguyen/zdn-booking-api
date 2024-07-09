@@ -14,6 +14,7 @@ import { UserEntity } from '../user/entities/user.entity';
 import { Subject } from 'rxjs';
 import { Pagination } from 'src/decorators/pagination.decorator';
 import { BaseResponse } from 'src/common/response/base.response';
+import { NotificationFilterDto } from './dto/notification-filter.dto';
 
 type EventObject = {
   count: number;
@@ -103,10 +104,17 @@ export class NotificationService
   async findAllUserNotifications(
     user: ReadUserDTO,
     paginationParams: Pagination,
+    notificationFilterDto: NotificationFilterDto,
   ) {
+    const readQuery = notificationFilterDto.read
+      ? { isRead: notificationFilterDto.read }
+      : {};
     const [notifications, count] =
       await this.notificationRepository.findAndCount({
-        where: { receiver: { id: user.id } },
+        where: {
+          receiver: { id: user.id },
+          ...readQuery,
+        },
         take: paginationParams.limit,
         skip: paginationParams.offset,
         order: { createdAt: 'DESC' },
