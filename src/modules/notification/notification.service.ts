@@ -43,7 +43,10 @@ export class NotificationService
 
   afterInsert(event: InsertEvent<NotificationEntity>): void | Promise<any> {
     const addedEntity = event.entity;
-    if (this.allSubscribedUsers.has(addedEntity.receiver.id))
+    if (
+      addedEntity?.receiver?.id &&
+      this.allSubscribedUsers.has(addedEntity?.receiver?.id)
+    )
       this.allSubscribedUsers.get(addedEntity.receiver.id).eventSubject.next({
         data: {
           id: addedEntity.id,
