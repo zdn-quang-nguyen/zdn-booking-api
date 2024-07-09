@@ -6,6 +6,12 @@
       "use": "@vercel/node"
     }
   ],
+  "env": {
+    "BRANCH": "pre-deploy"
+  },
+  "scripts": {
+    "vercel-deploy": "if [ \"$BRANCH\" != \"main\" ]; then echo \"Cannot deploy from $BRANCH branch\"; exit 1; fi"
+  },
   "routes": [
     {
       "src": "/(.*)",
