@@ -1,4 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { IsOptional } from 'class-validator';
 import { CreateSportFieldDto } from './create-sport-field.dto';
 
-export class UpdateSportFieldDto extends PartialType(CreateSportFieldDto) {}
+export class UpdateSportFieldDto extends CreateSportFieldDto {
+  @IsOptional()
+  removeImageIds?: string[];
+}

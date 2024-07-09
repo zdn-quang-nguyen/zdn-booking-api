@@ -7,50 +7,76 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
-import { Field } from '../../field/entities/field.entity';
-import { Location } from '../../location/entities/location.entity';
-import { SportFieldImage } from './sport-field-image.entity';
-import { SportFieldType } from './sport-field-type.entity';
+import { FieldEntity } from '../../field/entities/field.entity';
+import { LocationEntity } from '../../location/entities/location.entity';
+import { SportFieldImageEntity } from './sport-field-image.entity';
+import { SportFieldTypeEntity } from './sport-field-type.entity';
+import { UserEntity } from 'src/modules/user/entities/user.entity';
+import { AutoMap } from '@automapper/classes';
 
-@Entity({ synchronize: true })
-export class SportField extends BaseEntity {
-  @Column({ length: 255, nullable: false })
+@Entity('sport_field')
+export class SportFieldEntity extends BaseEntity {
+  @AutoMap()
+  @Column('character varying', { length: 255, nullable: false })
   name: string;
 
+  @AutoMap()
   @Column({ type: 'integer', nullable: false })
   quantity: number;
 
-  @Column({ length: 10, nullable: false })
+  @AutoMap()
+  @Column({ length: 10 | 11, nullable: false })
   phone: string;
 
-  @Column({ type: 'timestamp', nullable: false })
-  startTime: Date;
+  @AutoMap()
+  @Column({ nullable: false })
+  startTime: string;
 
-  @Column({ type: 'timestamp', nullable: false })
-  endTime: Date;
+  @AutoMap()
+  @Column({ nullable: false })
+  endTime: string;
 
+  @AutoMap()
   @Column({ type: 'float', nullable: false })
   price: number;
 
+  @AutoMap()
   @Column({ length: 65535 })
   rule: string;
 
+  @AutoMap()
+  @Column('uuid', { name: 'sport_field_type_id', nullable: false })
+  sportFieldTypeId: string;
+
+  @AutoMap()
   @ManyToOne(
-    () => SportFieldType,
+    () => SportFieldTypeEntity,
     (sportFieldType) => sportFieldType.sportFields,
   )
   @JoinColumn({ name: 'sport_field_type_id' })
-  sportFieldType: SportFieldType;
+  sportFieldType: SportFieldTypeEntity;
 
+  @AutoMap()
+  @Column('uuid', { name: 'owner_id', nullable: false })
+  ownerId: string;
+
+  @AutoMap()
+  @ManyToOne(() => UserEntity, (owner) => owner.ownedSportFields)
+  @JoinColumn({ name: 'owner_id' })
+  owner: UserEntity;
+
+  @AutoMap()
   @OneToMany(
-    () => SportFieldImage,
+    () => SportFieldImageEntity,
     (sportFieldImage) => sportFieldImage.sportField,
   )
-  sportFieldImages: SportFieldImage[];
+  sportFieldImages: SportFieldImageEntity[];
 
-  @OneToOne(() => Location, (location) => location.sportField)
-  location: Location;
+  @AutoMap()
+  @OneToOne(() => LocationEntity, (location) => location.sportField)
+  location: LocationEntity;
 
-  @OneToMany(() => Field, (field) => field.sportField)
-  fields: Field[];
+  @AutoMap()
+  @OneToMany(() => FieldEntity, (field) => field.sportField)
+  fields: FieldEntity[];
 }

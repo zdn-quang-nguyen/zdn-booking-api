@@ -1,34 +1,58 @@
 import { BaseEntity } from 'src/common/entity/base.entity';
-import { SportField } from 'src/modules/sport-field/entities/sport-field.entity';
+import { SportFieldEntity } from 'src/modules/sport-field/entities/sport-field.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
-import { District } from './district.entity';
-import { Province } from './province.entity';
-import { Ward } from './ward.entity';
+import { DistrictEntity } from './district.entity';
+import { ProvinceEntity } from './province.entity';
+import { WardEntity } from './ward.entity';
+import { AutoMap } from '@automapper/classes';
 
-@Entity({ synchronize: true })
-export class Location extends BaseEntity {
-  @OneToOne(() => SportField, (sportField) => sportField.location)
+@Entity('location')
+export class LocationEntity extends BaseEntity {
+  @AutoMap()
+  @Column({ name: 'sport_field_id', type: 'uuid' })
+  sportFieldId: string;
+
+  @AutoMap()
+  @OneToOne(() => SportFieldEntity, (sportField) => sportField.location)
   @JoinColumn({ name: 'sport_field_id' })
-  sportField: SportField;
+  sportField: SportFieldEntity;
 
-  @ManyToOne(() => Province, (province) => province.locations)
-  @JoinColumn({ name: 'provice_id' })
-  province: Province;
+  @AutoMap()
+  @Column({ name: 'province_id', type: 'uuid' })
+  provinceId: string;
 
-  @ManyToOne(() => District, (district) => district.locations)
+  @AutoMap()
+  @ManyToOne(() => ProvinceEntity, (province) => province.locations)
+  @JoinColumn({ name: 'province_id' })
+  province: ProvinceEntity;
+
+  @AutoMap()
+  @Column({ name: 'district_id', type: 'uuid' })
+  districtId: string;
+
+  @AutoMap()
+  @ManyToOne(() => DistrictEntity, (district) => district.locations)
   @JoinColumn({ name: 'district_id' })
-  district: District;
+  district: DistrictEntity;
 
-  @ManyToOne(() => Ward, (ward) => ward.locations)
+  @AutoMap()
+  @Column({ name: 'ward_id', type: 'uuid' })
+  wardId: string;
+
+  @AutoMap()
+  @ManyToOne(() => WardEntity, (ward) => ward.locations)
   @JoinColumn({ name: 'ward_id' })
-  ward: Ward;
+  ward: WardEntity;
 
-  @Column({ type: 'character varying', length: 64 })
-  address_detail: string;
+  @AutoMap()
+  @Column({ name: 'address_detail', type: 'character varying', length: 255 })
+  addressDetail: string;
 
-  @Column('float')
+  @AutoMap()
+  @Column('float', { nullable: true })
   longitude: number;
 
-  @Column('float')
+  @AutoMap()
+  @Column('float', { nullable: true })
   latitude: number;
 }

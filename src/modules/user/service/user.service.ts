@@ -1,47 +1,101 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
-import { PROVIDER } from 'src/constants/constants';
-import { User } from '../entities/user.entity';
-import { Repository } from 'typeorm';
-import { InjectMapper } from '@automapper/nestjs';
 import { Mapper } from '@automapper/core';
+import { InjectMapper } from '@automapper/nestjs';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { BaseService } from 'src/common/service/base.service';
+import { Repository } from 'typeorm';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserEntity } from '../entities/user.entity';
+import { KeycloakService } from 'src/modules/auth/api/auth';
 import { ReadUserDTO } from '../dto/read-user-dto';
-import { AccountService } from 'src/modules/account/account.service';
+import { CreateSocialUserDto } from '../dto/create-social-user.dto';
 
 @Injectable()
-export class UserService {
+export class UserService extends BaseService<UserEntity> {
   constructor(
     @InjectMapper()
     private readonly classMapper: Mapper,
-    @Inject(PROVIDER.USER_REPOSITORY)
-    private readonly userRepository: Repository<User>,
-    private readonly accountService: AccountService,
-  ) {}
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    private readonly keycloakService: KeycloakService,
+  ) {
+    super(userRepository);
   }
 
-  findAll() {
-    return this.userRepository.find();
-  }
-
-  async findOne(id: string) {
-    const user = await this.userRepository.findOne({ where: { id } });
-    console.log(user);
-
-    try {
-      return this.classMapper.map(user, User, ReadUserDTO);
-    } catch (ex) {
-      throw new Error(`findAll error: ${ex.message}.`);
+  async updateProfile(id: string, data: UpdateUserDto) {
+    const userExist = await this.userRepository.findOne({
+      where: [{ id: id }],
+    });
+    if (!userExist) {
+      return {
+        statusCode: 404,
+        status: 'Error',
+        message: 'User not exists',
+      };
     }
+
+    const dataToken = await this.keycloakService.getAccessTokenRealms();
+
+    const dataBody = {
+      attributes: {
+        phone: data.phone,
+        FullName: data.name,
+      },
+    };
+    await this.keycloakService.updateUserKeyCloak(
+      id,
+      dataBody,
+      dataToken.access_token,
+    );
+    await this.userRepository.update(id, data);
+    return {
+      statusCode: 200,
+      status: 'Success',
+      message: 'Updated successfully',
+      data,
+    };
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+  async createSocialUser(
+    user: ReadUserDTO,
+    createSocialUserDto: CreateSocialUserDto,
+  ) {
+    console.log('🚀 ~ UserService ~ createSocialUserDto:', createSocialUserDto);
+    console.log('🚀 ~ UserService ~ user:', user);
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    const userExist = await this.userRepository.findOne({
+      where: [{ id: user.id }],
+    });
+
+    if (userExist) {
+      return userExist;
+    }
+    const dataToken = await this.keycloakService.getAccessTokenRealms();
+    const roleUser = await this.keycloakService.getRoleIdKeyCloak(
+      dataToken.access_token,
+      createSocialUserDto.role,
+    );
+    const userRole = [
+      {
+        id: roleUser.id,
+        name: createSocialUserDto.role,
+      },
+    ];
+
+    await this.keycloakService.createRoleUserKeyCloak(
+      user.id,
+      dataToken.access_token,
+      userRole,
+    );
+    try {
+      await this.userRepository.save({
+        ...user,
+        role: createSocialUserDto.role,
+        createdBy: user.id,
+      });
+    } catch (error) {
+      console.log('🚀 ~ UserService ~ error:', error);
+    }
+    return user;
   }
 }

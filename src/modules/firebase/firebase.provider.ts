@@ -24,11 +24,19 @@ export const firebaseProvider = {
       ),
       universe_domain: configService.get<string>('FIRE_UNIVERSE_DOMAIN'),
     } as admin.ServiceAccount;
+    const projectId = configService.get<string>('FIRE_PROJECT_ID');
+    if (!projectId) {
+      throw new Error('FIRE_PROJECT_ID is not defined');
+    }
+    const storageBucketUrl = `${projectId}.appspot.com`;
+    if (!storageBucketUrl) {
+      throw new Error('storageBucket URL could not be constructed');
+    }
 
     return admin.initializeApp({
       credential: admin.credential.cert(firebaseConfig),
       databaseURL: `https://${firebaseConfig.projectId}.firebaseio.com`,
-      storageBucket: `${firebaseConfig.projectId}.appspot.com`,
+      storageBucket: storageBucketUrl,
     });
   },
 };

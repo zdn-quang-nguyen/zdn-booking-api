@@ -1,18 +1,18 @@
 import { BaseEntity } from 'src/common/entity/base.entity';
-import { User } from 'src/modules/user/entities/user.entity';
+import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
-enum AccountType {
+export enum AccountType {
   manual = 'manual',
   is_google = 'is_google',
   is_facebook = 'is_facebook',
 }
-@Entity()
-export class Account extends BaseEntity {
+@Entity('account')
+export class AccountEntity extends BaseEntity {
   @Column({ type: 'enum', enum: AccountType, nullable: false })
   name: AccountType;
 
-  @ManyToOne(() => User, (user) => user.accounts, { nullable: false })
+  @ManyToOne(() => UserEntity, (user) => user.accounts, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: UserEntity;
 }

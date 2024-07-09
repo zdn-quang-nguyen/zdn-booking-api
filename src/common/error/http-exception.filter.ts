@@ -1,4 +1,5 @@
 import { Catch, HttpException } from '@nestjs/common';
+import { BaseResponse } from '../response/base.response';
 
 @Catch(HttpException)
 export class HttpExceptionFilter {
@@ -9,11 +10,14 @@ export class HttpExceptionFilter {
     const status = exception.getStatus();
     const message = exception.getResponse().message || exception.getResponse();
 
-    response.status(status).json({
-      message: message,
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    });
+    const exceptionResponse = new BaseResponse(
+      null,
+      message,
+      status,
+      new Date().toISOString(),
+    );
+    console.log('Exception: ', exceptionResponse, request.url);
+
+    response.status(status).json(exceptionResponse);
   }
 }
