@@ -113,7 +113,7 @@ export class BookingService extends BaseService<BookingEntity> {
 
   async validateBookingTime(fieldId: string, startTime: Date, endTime: Date) {
     if (await this.isBookingTimeInvalid(fieldId, startTime, endTime)) {
-      throw new BadRequestException('Invalid booking time');
+      throw new BadRequestException('The field is not working at this time.');
     }
 
     if (await this.hasBookingTime(fieldId, startTime, endTime)) {
