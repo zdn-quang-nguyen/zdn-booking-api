@@ -168,6 +168,49 @@ export class LocationService {
     return await this.wardRepository.find();
   }
 
+  async getListLocationByAddress(address: string) {
+    try {
+      const response = await axios.get(
+        `http://dev.virtualearth.net/REST/v1/Locations`,
+        {
+          params: {
+            query: address,
+            key: this.apiKey,
+          },
+        },
+      );
+
+      const data = response.data;
+      console.log(data);
+
+      if (
+        data &&
+        data.resourceSets &&
+        data.resourceSets.length > 0 &&
+        data.resourceSets[0].resources.length > 0
+      ) {
+        const locations = data.resourceSets[0].resources.map(
+          (resource: any) => {
+            return {
+              name: resource.address.addressLine,
+              lat: resource.point.coordinates[0],
+              lng: resource.point.coordinates[1],
+              displayName: resource.address.formattedAddress,
+            };
+          },
+        );
+        return locations;
+      } else {
+        throw new HttpException('No location found', HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      throw new HttpException(
+        `Error fetching location: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async findLocationByAddress(
     address: string,
   ): Promise<{ latitude: number; longitude: number }> {

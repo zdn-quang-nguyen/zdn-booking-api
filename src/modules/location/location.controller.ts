@@ -40,6 +40,18 @@ export class LocationController {
     }
   }
 
+  @Public()
+  @Get('address')
+  async getLocationsByAddress(@Query('address') address: string, @Res() res) {
+    try {
+      const location =
+        await this.locationService.getListLocationByAddress(address);
+      return res.status(HttpStatus.OK).json(location);
+    } catch (error: any) {
+      return res.status(error.getStatus()).json({ message: error.message });
+    }
+  }
+
   @Post()
   async create(
     @Body() createLocationDto: CreateLocationDto,
