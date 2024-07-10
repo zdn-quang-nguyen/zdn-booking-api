@@ -135,7 +135,7 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
     }
 
     if (filter.name) {
-      query.andWhere('sportField.name ILIKE :name', {
+      query.andWhere('unaccent(sportField.name) ILIKE unaccent(:name)', {
         name: `%${filter.name}%`,
       });
     }
@@ -166,7 +166,7 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
       const userQuery = JSON.parse(filter.query);
 
       if (userQuery.name) {
-        query.andWhere('sportField.name ILIKE :name', {
+        query.andWhere('unaccent(sportField.name) ILIKE unaccent(:name)', {
           name: `%${userQuery.name}%`,
         });
       }
