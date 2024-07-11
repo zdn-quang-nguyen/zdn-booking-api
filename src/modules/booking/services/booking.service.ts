@@ -629,27 +629,32 @@ export class BookingService extends BaseService<BookingEntity> {
     dailyEndTime: string,
   ): Promise<ReadingBookingCalendar[][]> {
     const weeklyData: ReadingBookingCalendar[][] = [];
+
     const currentDate = new Date(startOfWeek);
     console.log(currentDate);
     while (currentDate <= new Date(endOfWeek)) {
-      console.log(currentDate.getHours());
       const startTime = new Date(currentDate);
-      const time = parseInt(dailyStartTime.split(':')[0], 10);
-      startTime.setHours(time);
+      const startHour = parseInt(dailyStartTime.split(':')[0], 10);
+      const startMinute = parseInt(dailyStartTime.split(':')[1], 10);
+
+      startTime.setHours(startHour, startMinute, 0, 0);
       console.log(startTime);
 
-      startTime.setMinutes(parseInt(dailyStartTime.split(':')[1]));
       const endTime = new Date(currentDate);
-      endTime.setHours(parseInt(dailyEndTime.split(':')[0], 10));
-      endTime.setMinutes(parseInt(dailyEndTime.split(':')[1], 10));
+      const endHour = parseInt(dailyEndTime.split(':')[0], 10);
+      const endMinute = parseInt(dailyEndTime.split(':')[1], 10);
+
+      endTime.setHours(endHour, endMinute, 0, 0);
+      console.log(endTime);
 
       const timeSlots = [];
       let currentTime = new Date(startTime);
-      const endTimeOfDay = new Date(endTime);
-      while (currentTime < endTimeOfDay) {
+      while (currentTime < endTime) {
         timeSlots.push(new Date(currentTime));
         currentTime = new Date(currentTime.getTime() + 30 * 60000);
       }
+
+      console.log(timeSlots);
 
       const fields = await this.fieldRepository.find({
         where: { sportField: { id: id } },
@@ -668,7 +673,7 @@ export class BookingService extends BaseService<BookingEntity> {
             },
           });
 
-          const isEmpty = bookings.length === 0;
+          const isEmpty = bookings.length < fieldIds.length;
 
           return {
             startTime: slot,
@@ -677,8 +682,6 @@ export class BookingService extends BaseService<BookingEntity> {
           };
         }),
       );
-
-      console.log(currentDate);
 
       weeklyData.push(results);
 
