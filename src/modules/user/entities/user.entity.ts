@@ -2,6 +2,7 @@ import { AutoMap } from '@automapper/classes';
 import { BaseEntity } from 'src/common/entity/base.entity';
 import { AccountEntity } from 'src/modules/account/entities/account.entity';
 import { BookingEntity } from 'src/modules/booking/entities/booking.entity';
+import { NotificationEntity } from 'src/modules/notification/entities/notification.entity';
 import { SportFieldEntity } from 'src/modules/sport-field/entities/sport-field.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -55,6 +56,9 @@ export class UserEntity extends BaseEntity {
 
   @OneToMany(() => BookingEntity, (booking) => booking.createdBy)
   createdBookings: BookingEntity[];
+
+  @OneToMany(() => NotificationEntity, (notification) => notification.receiver)
+  notifications: NotificationEntity[];
 
   // @OneToMany(() => BaseEntity, (entity) => entity.createdBy)
   // createdEntities: BaseEntity[];

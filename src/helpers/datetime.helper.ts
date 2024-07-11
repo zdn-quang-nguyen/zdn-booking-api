@@ -27,4 +27,12 @@ export class DateTimeHelper {
   static isInPast(time: Date) {
     return new Date(time) < new Date();
   }
+
+  static getTimeString(date: Date) {
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h24',
+    });
+  }
 }

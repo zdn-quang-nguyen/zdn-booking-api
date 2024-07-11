@@ -29,6 +29,8 @@ import { ReadBookingDto } from '../dto/read-booking.dto';
 import { ReadOwnerBookingDto } from '../dto/read-owner-booking.dto';
 import { UpdateStatusBookingDto } from '../dto/update-status-booking.dto';
 import { BookingEntity, BookingStatus } from '../entities/booking.entity';
+import { NotificationService } from 'src/modules/notification/notification.service';
+import { title } from 'process';
 
 @Injectable()
 export class BookingService extends BaseService<BookingEntity> {
@@ -41,6 +43,7 @@ export class BookingService extends BaseService<BookingEntity> {
     private readonly fieldRepository: Repository<FieldEntity>,
     @InjectMapper()
     public readonly mapper: Mapper,
+    private readonly notificationService: NotificationService,
   ) {
     super(bookingRepository);
   }
@@ -110,7 +113,7 @@ export class BookingService extends BaseService<BookingEntity> {
 
   async validateBookingTime(fieldId: string, startTime: Date, endTime: Date) {
     if (await this.isBookingTimeInvalid(fieldId, startTime, endTime)) {
-      throw new BadRequestException('Invalid booking time');
+      throw new BadRequestException('The field is not working at this time.');
     }
 
     if (await this.hasBookingTime(fieldId, startTime, endTime)) {
@@ -138,8 +141,8 @@ export class BookingService extends BaseService<BookingEntity> {
       status: BookingStatus.BOOKING,
       field,
       fullName: user.name,
-      createdBy: user.id,
-      updatedBy: user.id,
+      createdBy: id,
+      updatedBy: id,
     });
 
     return newBooking;
@@ -542,12 +545,41 @@ export class BookingService extends BaseService<BookingEntity> {
         status: 'Failed',
         message: 'Updated failed',
       };
+
+    await this.createBookingNotification(booking, data);
+
     return {
       statusCode: 200,
       status: 'Success',
       message: 'Updated successfully',
     };
   }
+
+  async createBookingNotification(
+    booking: BookingEntity,
+    data: Partial<BookingEntity>,
+  ) {
+    const notificationData = {
+      title: '',
+      description: `${booking.field.sportField.name} ${DateTimeHelper.getTimeString(booking.startTime)} - ${DateTimeHelper.getTimeString(booking.endTime)} ${booking.field.name}`,
+      receiverId: booking.createdBy,
+      metadata: {
+        titleHref: `/field-reservation/${booking.field.sportField.id}`,
+        descHref: `/field-reservation/${booking.field.sportField.id}`,
+      },
+    };
+
+    if (data.status === BookingStatus.ACCEPTED) {
+      notificationData.title = 'Đặt chỗ thành công';
+    }
+
+    if (data.status === BookingStatus.REJECTED) {
+      notificationData.title = 'Yêu cầu đặt chỗ đã bị hủy';
+    }
+
+    await this.notificationService.createNotification(notificationData);
+  }
+
   async updateQRBooking(id: string, user: ReadUserDTO) {
     const booking = await this.bookingRepository.findOne({
       where: {
