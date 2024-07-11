@@ -31,6 +31,7 @@ import { UpdateStatusBookingDto } from '../dto/update-status-booking.dto';
 import { BookingEntity, BookingStatus } from '../entities/booking.entity';
 import { NotificationService } from 'src/modules/notification/notification.service';
 import { title } from 'process';
+import { BaseResponse } from 'src/common/response/base.response';
 
 @Injectable()
 export class BookingService extends BaseService<BookingEntity> {
@@ -72,12 +73,12 @@ export class BookingService extends BaseService<BookingEntity> {
     const startTimeString = new Date(startTime).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      hourCycle: 'h24',
+      hourCycle: 'h23',
     });
     const endTimeString = new Date(endTime).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      hourCycle: 'h24',
+      hourCycle: 'h23',
     });
 
     const compareStartTime = DateTimeHelper.compareTimes(
@@ -123,6 +124,13 @@ export class BookingService extends BaseService<BookingEntity> {
     if (DateTimeHelper.isInPast(startTime)) {
       throw new BadRequestException('Invalid booking time');
     }
+
+    return new BaseResponse(
+      null,
+      'Booking time is valid',
+      200,
+      new Date().toLocaleTimeString(),
+    );
   }
 
   async createBooking(user: ReadUserDTO, createBookingDto: CreateBookingDto) {
