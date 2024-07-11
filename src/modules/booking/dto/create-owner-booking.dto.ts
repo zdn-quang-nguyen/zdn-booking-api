@@ -3,7 +3,7 @@ import { CreateBookingDto } from './create-booking.dto';
 import { BookingStatus } from '../entities/booking.entity';
 
 export class CreateOwnerBookingDto extends CreateBookingDto {
-  @IsPhoneNumber('VN')
+  @IsPhoneNumber('VN', { message: 'Phone number is invalid' })
   @IsNotEmpty()
   phone: string;
 
