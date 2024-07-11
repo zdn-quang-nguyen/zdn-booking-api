@@ -135,9 +135,12 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
     }
 
     if (filter.name) {
-      query.andWhere('sportField.name ILIKE :name', {
-        name: `%${filter.name}%`,
-      });
+      query.andWhere(
+        'immutable_unaccent(sportField.name) ILIKE immutable_unaccent(:name)',
+        {
+          name: `%${filter.name}%`,
+        },
+      );
     }
 
     if (filter.startTime && filter.endTime) {
@@ -166,9 +169,12 @@ export class SportFieldService extends BaseService<SportFieldEntity> {
       const userQuery = JSON.parse(filter.query);
 
       if (userQuery.name) {
-        query.andWhere('sportField.name ILIKE :name', {
-          name: `%${userQuery.name}%`,
-        });
+        query.andWhere(
+          'immutable_unaccent(sportField.name) ILIKE immutable_unaccent(:name)',
+          {
+            name: `%${userQuery.name}%`,
+          },
+        );
       }
 
       // if (userQuery.date !== undefined && userQuery.date !== '') {

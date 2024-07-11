@@ -25,6 +25,7 @@ import { UserModule } from './modules/user/user.module';
 import { FiltersProvider } from './providers/filters.provider';
 import { GuardsProvider } from './providers/guards.provider';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     MailModule,
     FirebaseModule,
     AuthModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService, ...FiltersProvider, ...GuardsProvider],

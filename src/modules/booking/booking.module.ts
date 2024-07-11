@@ -5,12 +5,14 @@ import { BookingEntity } from './entities/booking.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SportFieldEntity } from '../sport-field/entities/sport-field.entity';
 import { FieldEntity } from '../field/entities/field.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   controllers: [BookingController],
   providers: [BookingService],
   imports: [
     TypeOrmModule.forFeature([BookingEntity, SportFieldEntity, FieldEntity]),
+    NotificationModule,
   ],
   exports: [BookingService],
 })
