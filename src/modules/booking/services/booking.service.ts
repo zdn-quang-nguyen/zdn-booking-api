@@ -285,10 +285,6 @@ export class BookingService extends BaseService<BookingEntity> {
   async getOwnerSchedule(user: ReadUserDTO, filter?: any) {
     const query = this.bookingRepository.createQueryBuilder('booking');
 
-    if (filter.fieldId) {
-      query.where('booking.fieldId = :fieldId', { fieldId: filter.fieldId });
-    }
-
     query
       .innerJoinAndSelect('booking.field', 'field')
       .innerJoinAndSelect('field.sportField', 'sportField')
@@ -296,9 +292,13 @@ export class BookingService extends BaseService<BookingEntity> {
       .orderBy('booking.startTime', 'DESC');
 
     query.where('sportField.ownerId = :userId', { userId: user.id });
+    if (filter.fieldId) {
+      query.where('booking.fieldId = :fieldId', { fieldId: filter.fieldId });
+    }
     if (filter.status) {
       this.applyStatusFilter(query, filter.status);
     }
+    const total = await query.getMany();
     return query.getMany();
   }
 
