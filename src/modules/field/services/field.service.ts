@@ -30,12 +30,16 @@ export class FieldService extends BaseService<FieldEntity> {
   }
 
   async findFieldById(id: string): Promise<ReadFieldDto> {
+    console.log(id);
     const field = await this.findOne({
       where: { id: id, deletedAt: IsNull() },
       relations: {
-        sportField: true,
+        sportField: {
+          location: true,
+        },
       },
     });
+    console.log(field);
     return this.mapper.map(field, FieldEntity, ReadFieldDto);
   }
 

@@ -24,6 +24,7 @@ import { ReadOwnerBookingDto } from '../dto/read-owner-booking.dto';
 import { CreateOwnerBookingDto } from '../dto/create-owner-booking.dto';
 
 import { BookingEntity } from '../entities/booking.entity';
+import { ValidateBookingDto } from '../dto/validate-booking.dto';
 
 @Controller('booking')
 @ApiTags('booking')
@@ -149,11 +150,6 @@ export class BookingController {
     return this.bookingService.getUserBooking(user, readBookingDto);
   }
 
-  @Get(':id')
-  getBookingById(@Param('id') id: string) {
-    return this.bookingService.getBookingById(id);
-  }
-
   @Get()
   getBookingsByFieldId(
     @User() user: ReadUserDTO,
@@ -188,5 +184,19 @@ export class BookingController {
   @Delete(':id')
   removeBooking(@Param('id') id: string, @User() user: ReadUserDTO) {
     return this.bookingService.remove(id, user);
+  }
+
+  @Get('validate')
+  async timeValidation(@Query() validateBookingDto: ValidateBookingDto) {
+    return await this.bookingService.validateBookingTime(
+      validateBookingDto.fieldId,
+      validateBookingDto.startTime,
+      validateBookingDto.endTime,
+    );
+  }
+
+  @Get(':id')
+  getBookingById(@Param('id') id: string) {
+    return this.bookingService.getBookingById(id);
   }
 }

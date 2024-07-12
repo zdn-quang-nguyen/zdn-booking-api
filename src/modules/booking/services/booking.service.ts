@@ -31,6 +31,7 @@ import { UpdateStatusBookingDto } from '../dto/update-status-booking.dto';
 import { BookingEntity, BookingStatus } from '../entities/booking.entity';
 import { NotificationService } from 'src/modules/notification/notification.service';
 import { title } from 'process';
+import { BaseResponse } from 'src/common/response/base.response';
 
 @Injectable()
 export class BookingService extends BaseService<BookingEntity> {
@@ -72,12 +73,12 @@ export class BookingService extends BaseService<BookingEntity> {
     const startTimeString = new Date(startTime).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      hourCycle: 'h24',
+      hourCycle: 'h23',
     });
     const endTimeString = new Date(endTime).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      hourCycle: 'h24',
+      hourCycle: 'h23',
     });
 
     const compareStartTime = DateTimeHelper.compareTimes(
@@ -123,6 +124,13 @@ export class BookingService extends BaseService<BookingEntity> {
     if (DateTimeHelper.isInPast(startTime)) {
       throw new BadRequestException('Invalid booking time');
     }
+
+    return new BaseResponse(
+      null,
+      'Booking time is valid',
+      200,
+      new Date().toLocaleTimeString(),
+    );
   }
 
   async createBooking(user: ReadUserDTO, createBookingDto: CreateBookingDto) {
@@ -277,10 +285,6 @@ export class BookingService extends BaseService<BookingEntity> {
   async getOwnerSchedule(user: ReadUserDTO, filter?: any) {
     const query = this.bookingRepository.createQueryBuilder('booking');
 
-    if (filter.fieldId) {
-      query.where('booking.fieldId = :fieldId', { fieldId: filter.fieldId });
-    }
-
     query
       .innerJoinAndSelect('booking.field', 'field')
       .innerJoinAndSelect('field.sportField', 'sportField')
@@ -288,9 +292,13 @@ export class BookingService extends BaseService<BookingEntity> {
       .orderBy('booking.startTime', 'DESC');
 
     query.where('sportField.ownerId = :userId', { userId: user.id });
+    if (filter.fieldId) {
+      query.where('booking.fieldId = :fieldId', { fieldId: filter.fieldId });
+    }
     if (filter.status) {
       this.applyStatusFilter(query, filter.status);
     }
+    const total = await query.getMany();
     return query.getMany();
   }
 
@@ -621,27 +629,32 @@ export class BookingService extends BaseService<BookingEntity> {
     dailyEndTime: string,
   ): Promise<ReadingBookingCalendar[][]> {
     const weeklyData: ReadingBookingCalendar[][] = [];
+
     const currentDate = new Date(startOfWeek);
     console.log(currentDate);
     while (currentDate <= new Date(endOfWeek)) {
-      console.log(currentDate.getHours());
       const startTime = new Date(currentDate);
-      const time = parseInt(dailyStartTime.split(':')[0], 10);
-      startTime.setHours(time);
+      const startHour = parseInt(dailyStartTime.split(':')[0], 10);
+      const startMinute = parseInt(dailyStartTime.split(':')[1], 10);
+
+      startTime.setHours(startHour, startMinute, 0, 0);
       console.log(startTime);
 
-      startTime.setMinutes(parseInt(dailyStartTime.split(':')[1]));
       const endTime = new Date(currentDate);
-      endTime.setHours(parseInt(dailyEndTime.split(':')[0], 10));
-      endTime.setMinutes(parseInt(dailyEndTime.split(':')[1], 10));
+      const endHour = parseInt(dailyEndTime.split(':')[0], 10);
+      const endMinute = parseInt(dailyEndTime.split(':')[1], 10);
+
+      endTime.setHours(endHour, endMinute, 0, 0);
+      console.log(endTime);
 
       const timeSlots = [];
       let currentTime = new Date(startTime);
-      const endTimeOfDay = new Date(endTime);
-      while (currentTime < endTimeOfDay) {
+      while (currentTime < endTime) {
         timeSlots.push(new Date(currentTime));
         currentTime = new Date(currentTime.getTime() + 30 * 60000);
       }
+
+      console.log(timeSlots);
 
       const fields = await this.fieldRepository.find({
         where: { sportField: { id: id } },
@@ -660,7 +673,7 @@ export class BookingService extends BaseService<BookingEntity> {
             },
           });
 
-          const isEmpty = bookings.length === 0;
+          const isEmpty = bookings.length < fieldIds.length;
 
           return {
             startTime: slot,
@@ -669,8 +682,6 @@ export class BookingService extends BaseService<BookingEntity> {
           };
         }),
       );
-
-      console.log(currentDate);
 
       weeklyData.push(results);
 
