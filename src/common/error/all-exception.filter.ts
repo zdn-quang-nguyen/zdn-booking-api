@@ -19,7 +19,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.message
         : 'Internal server error.';
 
-    const status = exception?.status || exception.getStatus() || 500;
+    const status = exception?.status || 500;
 
     const exceptionResponse = new BaseResponse(
       null,
