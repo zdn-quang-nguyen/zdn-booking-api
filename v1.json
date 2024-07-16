@@ -1,16 +1,36 @@
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "src/main.ts",
-      "use": "@vercel/node"
+[
+  {
+    "version": 2,
+    "builds": [
+      {
+        "src": "src/main.ts",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "src/main.ts",
+        "methods": ["GET", "POST", "PUT", "DELETE"]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json.schemastore.org/nest-cli",
+    "collection": "@nestjs/schematics",
+    "sourceRoot": "src",
+    "compilerOptions": {
+      "deleteOutDir": true,
+      "assets": ["templates/**/*"],
+      "watchAssets": true,
+      "webpack": true,
+      "tsConfigPath": "tsconfig.build.json",
+      "builder": {
+        "options": {
+          "outputPath": "api"
+        }
+      }
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "src/main.ts",
-      "methods": ["GET", "POST", "PUT", "DELETE"]
-    }
-  ]
-}
+  }
+]
