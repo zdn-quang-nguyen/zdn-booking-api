@@ -207,7 +207,9 @@ export class LocationService {
         const locations = data.resourceSets[0].resources.map(
           (resource: any) => {
             return {
-              name: resource.address.addressLine,
+              name: resource.address.addressLine
+                ? resource.address.addressLine
+                : resource.address.formattedAddress,
               lat: resource.point.coordinates[0],
               lon: resource.point.coordinates[1],
               displayName: resource.address.formattedAddress,
