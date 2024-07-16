@@ -41,6 +41,19 @@ export class LocationService {
         createLocationDto.longitude = longitude;
       }
       console.log(createLocationDto.latitude, createLocationDto.longitude);
+      if (
+        createLocationDto.latitude === 0 ||
+        createLocationDto.longitude === 0 ||
+        !createLocationDto.latitude ||
+        !createLocationDto.longitude
+      ) {
+        const { longitude, latitude } = await this.findLocationByAddress(
+          createLocationDto.addressDetail,
+        );
+        createLocationDto.latitude = latitude;
+        createLocationDto.longitude = longitude;
+      }
+      console.log(createLocationDto.latitude, createLocationDto.longitude);
       const entity = this.classMapper.map(
         createLocationDto,
         CreateLocationDto,
@@ -101,6 +114,18 @@ export class LocationService {
     //   LocationEntity,
     // );
     if (updateLocationDto.addressDetail) {
+      if (
+        updateLocationDto.latitude === 0 ||
+        updateLocationDto.longitude === 0 ||
+        !updateLocationDto.latitude ||
+        !updateLocationDto.longitude
+      ) {
+        const { longitude, latitude } = await this.findLocationByAddress(
+          updateLocationDto.addressDetail,
+        );
+        updateLocationDto.latitude = latitude;
+        updateLocationDto.longitude = longitude;
+      }
       if (
         updateLocationDto.latitude === 0 ||
         updateLocationDto.longitude === 0 ||
