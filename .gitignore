@@ -3,6 +3,7 @@
 /api
 /node_modules
 /build
+/.vercel
 
 # Logs
 logs
