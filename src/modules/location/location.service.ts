@@ -28,11 +28,19 @@ export class LocationService {
 
   async create(createLocationDto: CreateLocationDto): Promise<any> {
     try {
-      const { longitude, latitude } = await this.findLocationByAddress(
-        createLocationDto.addressDetail,
-      );
-      createLocationDto.latitude = latitude;
-      createLocationDto.longitude = longitude;
+      if (
+        createLocationDto.latitude === 0 ||
+        createLocationDto.longitude === 0 ||
+        !createLocationDto.latitude ||
+        !createLocationDto.longitude
+      ) {
+        const { longitude, latitude } = await this.findLocationByAddress(
+          createLocationDto.addressDetail,
+        );
+        createLocationDto.latitude = latitude;
+        createLocationDto.longitude = longitude;
+      }
+      console.log(createLocationDto.latitude, createLocationDto.longitude);
       const entity = this.classMapper.map(
         createLocationDto,
         CreateLocationDto,
@@ -93,11 +101,18 @@ export class LocationService {
     //   LocationEntity,
     // );
     if (updateLocationDto.addressDetail) {
-      const { latitude, longitude } = await this.findLocationByAddress(
-        updateLocationDto.addressDetail,
-      );
-      updateLocationDto.latitude = latitude;
-      updateLocationDto.longitude = longitude;
+      if (
+        updateLocationDto.latitude === 0 ||
+        updateLocationDto.longitude === 0 ||
+        !updateLocationDto.latitude ||
+        !updateLocationDto.longitude
+      ) {
+        const { longitude, latitude } = await this.findLocationByAddress(
+          updateLocationDto.addressDetail,
+        );
+        updateLocationDto.latitude = latitude;
+        updateLocationDto.longitude = longitude;
+      }
     }
 
     const res = await this.locationRepository.update(
@@ -166,6 +181,49 @@ export class LocationService {
 
   async findAllWard() {
     return await this.wardRepository.find();
+  }
+
+  async getListLocationByAddress(address: string) {
+    try {
+      const response = await axios.get(
+        `http://dev.virtualearth.net/REST/v1/Locations`,
+        {
+          params: {
+            query: address,
+            key: this.apiKey,
+          },
+        },
+      );
+
+      const data = response.data;
+      console.log(data);
+
+      if (
+        data &&
+        data.resourceSets &&
+        data.resourceSets.length > 0 &&
+        data.resourceSets[0].resources.length > 0
+      ) {
+        const locations = data.resourceSets[0].resources.map(
+          (resource: any) => {
+            return {
+              name: resource.address.addressLine,
+              lat: resource.point.coordinates[0],
+              lon: resource.point.coordinates[1],
+              displayName: resource.address.formattedAddress,
+            };
+          },
+        );
+        return locations;
+      } else {
+        throw new HttpException('No location found', HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      throw new HttpException(
+        `Error fetching location: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async findLocationByAddress(
