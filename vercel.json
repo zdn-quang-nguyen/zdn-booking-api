@@ -3,13 +3,7 @@
   "builds": [
     {
       "src": "dist/main.js",
-      "use": "@vercel/node",
-      "config": {
-        "functions": {
-          "dist/*.js": { "maxDuration": 60 },
-          "middleware/**/*.js": { "maxDuration": 60 }
-        }
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [

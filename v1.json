@@ -15,6 +15,20 @@
       }
     ]
   },
+  {
+    "functions": {
+      "api/**/*.js": {
+        "maxDuration": 60
+      }
+    },
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "dist/main.js",
+        "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+      }
+    ]
+  },
 
   {
     "$schema": "https://json.schemastore.org/nest-cli",
